@@ -1,7 +1,7 @@
 
 // Vercel Serverless Function (Node.js)
 // This file runs on the server, keeping your GITHUB_TOKEN secure.
-const { Octokit } = require("@octokit/rest");
+import { Octokit } from "@octokit/rest";
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -30,8 +30,6 @@ export default async function handler(req, res) {
   try {
     // 2. Commit Logic
     // We iterate through the files (e.g., zh.md and en.md) and commit them.
-    // In a real high-concurrency scenario, you'd use a Tree API to commit multiple files at once.
-    // For a personal blog, sequential commits or simple updates are fine.
     
     for (const file of files) {
       const { path, content } = file;
