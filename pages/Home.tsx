@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { THEMES, getAllContent, AUTHOR } from '../services/data';
+import { useThemes, useAllContent, useAuthor } from '../contexts/ContentContext';
 import { ContentType } from '../types';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Network, Sparkles } from 'lucide-react';
@@ -9,7 +10,10 @@ import { Marginalia } from '../components/Marginalia';
 import { SmoothText, SmoothBlock } from '../components/SmoothText';
 
 const Home: React.FC = () => {
-  const selectedWorks = getAllContent().slice(0, 3);
+  const content = useAllContent();
+  const themes = useThemes();
+  const author = useAuthor();
+  const selectedWorks = content.slice(0, 3);
   const { lang, t } = useLanguage();
   
   // Easter Egg #3 Logic
@@ -52,10 +56,9 @@ const Home: React.FC = () => {
             <div className="md:col-span-8">
             <div className="prose-academic text-stone-800 dark:text-stone-300 text-lg md:text-xl font-serif leading-loose transition-colors">
                 <SmoothBlock stagger={100} className="relative">
-                    {AUTHOR.bio[lang]}
+                    {author.bio[lang]}
                     <Marginalia note={bioNote} trigger="?" />
                 </SmoothBlock>
-                {/* Breathing Quote - Starts dim, becomes clear to simulate "standing firm in the heart" */}
                 <div className="mt-8 text-stone-600 dark:text-stone-400 italic text-base animate-clarity opacity-60 blur-[0.3px]">
                    <SmoothText stagger={200}>"{coreIntuition[lang]}"</SmoothText>
                 </div>
@@ -74,16 +77,14 @@ const Home: React.FC = () => {
             </div>
         </FadeIn>
         
-        {/* Subtle background container to "hold" the space in Day Mode */}
         <div className="md:-mx-8 md:px-8 md:py-8 rounded-2xl bg-stone-50/80 dark:bg-transparent transition-colors duration-1000">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {THEMES.map((theme, index) => (
+            {themes.map((theme, index) => (
                 <FadeIn key={theme.id} delay={index * 150} className="h-full">
                     <div 
                         className="group flex flex-col h-full cursor-pointer bg-white/40 dark:bg-transparent p-4 md:p-0 rounded-sm md:rounded-none transition-colors duration-500"
                         onClick={() => handleThemeClick(theme.id)}
                     >
-                    {/* Abstract Visual Placeholder */}
                     <div className="mb-6 overflow-hidden bg-stone-100 dark:bg-stone-900 aspect-[4/3] border border-stone-100 dark:border-stone-800 relative transition-colors duration-500">
                         {theme.coverImage ? (
                             <div className="w-full h-full overflow-hidden">

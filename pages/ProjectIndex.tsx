@@ -1,12 +1,14 @@
+
 import React from 'react';
-import { getAllContent } from '../services/data';
+import { useAllContent } from '../contexts/ContentContext';
 import { ContentType } from '../types';
 import { ContentCard } from '../components/ContentCard';
 import { Archive } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const ProjectIndex: React.FC = () => {
-  const projects = getAllContent().filter(c => c.type === ContentType.PROJECT);
+  const allContent = useAllContent();
+  const projects = allContent.filter(c => c.type === ContentType.PROJECT);
   const { lang, t } = useLanguage();
 
   return (

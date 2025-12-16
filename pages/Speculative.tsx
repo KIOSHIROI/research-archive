@@ -1,11 +1,13 @@
+
 import React from 'react';
-import { SPECULATIVE_CONTENT } from '../services/data';
+import { useSpeculative } from '../contexts/ContentContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { FadeIn } from '../components/FadeIn';
 import { Sparkles } from 'lucide-react';
 
 const Speculative: React.FC = () => {
   const { lang } = useLanguage();
+  const speculativeData = useSpeculative();
 
   return (
     <div className="max-w-2xl mx-auto space-y-16">
@@ -13,7 +15,7 @@ const Speculative: React.FC = () => {
         <header className="mb-12 flex items-center gap-3">
           <Sparkles className="text-stone-400 dark:text-stone-500" size={20} />
           <h1 className="font-serif text-2xl md:text-3xl text-stone-800 dark:text-stone-200 italic transition-colors">
-            {SPECULATIVE_CONTENT.title[lang]}
+            {speculativeData.title[lang]}
           </h1>
         </header>
 
@@ -26,7 +28,7 @@ const Speculative: React.FC = () => {
            </p>
 
            <div className="space-y-16">
-              {SPECULATIVE_CONTENT.items.map((item, idx) => (
+              {speculativeData.items.map((item, idx) => (
                 <div key={idx} className="relative">
                    <div className="absolute -left-12 top-1 text-xs font-mono text-stone-300 dark:text-stone-600 hidden md:block">
                      {item.date}

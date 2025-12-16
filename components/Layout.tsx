@@ -1,18 +1,20 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { AUTHOR } from '../services/data';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Moon, Sun } from 'lucide-react';
+import { useAuthor } from '../contexts/ContentContext';
+import { Moon, Sun, Search } from 'lucide-react';
 import { Starfield } from './Starfield';
 import { SmoothText } from './SmoothText';
+import { CommandPalette } from './CommandPalette';
 
 const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { lang, toggleLang, t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  const author = useAuthor();
   const [isNightTime, setIsNightTime] = useState(false);
   const [showDeepThought, setShowDeepThought] = useState(false);
   
@@ -33,6 +35,11 @@ const Layout: React.FC = () => {
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'A') {
         e.preventDefault();
         navigate('/admin');
+      }
+      // Trigger search with just / key if not in an input
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+          e.preventDefault();
+          window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -80,6 +87,8 @@ const Layout: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden transition-colors duration-1000">
        
+       <CommandPalette />
+
        {/* Global Noise Texture */}
        <div className="fixed inset-0 pointer-events-none z-0 opacity-30 dark:opacity-20 bg-noise mix-blend-multiply dark:mix-blend-overlay"></div>
 
@@ -104,16 +113,26 @@ const Layout: React.FC = () => {
                     className="cursor-pointer select-none"
                 >
                     <NavLink to="/" className="font-serif text-xl font-bold tracking-tight text-stone-900 dark:text-stone-100 block leading-none mb-2 transition-colors">
-                        <SmoothText stagger={0}>{AUTHOR.name[lang]}</SmoothText>
+                        <SmoothText stagger={0}>{author.name[lang]}</SmoothText>
                     </NavLink>
                 </div>
                 <div className="text-sm text-stone-500 dark:text-stone-500 font-light tracking-wide transition-colors">
-                    <SmoothText stagger={50}>{AUTHOR.role[lang]}</SmoothText>
+                    <SmoothText stagger={50}>{author.role[lang]}</SmoothText>
                 </div>
                 </div>
 
                 <div className="flex flex-col items-end gap-6 fade-in" style={{ animationDelay: '100ms' }}>
                 <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
+                        className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-stone-400 hover:text-stone-800 dark:hover:text-stone-300 transition-colors group"
+                    >
+                        <Search size={14} />
+                        <span className="hidden md:inline group-hover:border-b border-stone-300 dark:border-stone-700">CMD+K</span>
+                    </button>
+                    
+                    <span className="text-stone-300 dark:text-stone-700">|</span>
+
                     <button 
                         onClick={toggleLang} 
                         className="text-xs font-mono uppercase tracking-wider text-stone-400 hover:text-stone-800 dark:hover:text-stone-300 transition-colors"
@@ -142,15 +161,17 @@ const Layout: React.FC = () => {
             </header>
         )}
 
-        {/* Main Content */}
+        {/* Main Content with Fade Transition */}
         <main className="flex-grow w-full min-h-[50vh]">
-            <Outlet />
+            <div key={location.pathname} className="animate-fade-in-up">
+               <Outlet />
+            </div>
         </main>
 
         {/* Footer (Hidden in Admin) */}
         {!isAdmin && (
             <footer className="mt-32 pt-12 border-t border-stone-200/60 dark:border-ink-800 text-stone-400 dark:text-stone-600 text-xs flex justify-between font-mono relative transition-colors duration-1000">
-                <div>&copy; {new Date().getFullYear()} <SmoothText>{AUTHOR.name[lang]}</SmoothText></div>
+                <div>&copy; {new Date().getFullYear()} <SmoothText>{author.name[lang]}</SmoothText></div>
                 
                 {(isNightTime || theme === 'dark') && (
                 <div className="absolute left-1/2 -translate-x-1/2 top-12 flex items-center gap-2 text-stone-300 dark:text-stone-700 animate-breath">

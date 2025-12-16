@@ -1,3 +1,4 @@
+
 import { Author, ContentItem, ContentType, ResearchTheme } from '../types';
 
 export const AUTHOR: Author = {
@@ -6,6 +7,8 @@ export const AUTHOR: Author = {
   affiliation: { en: "Independent / System Lab", zh: "独立研究 / 系统实验室" },
   email: "poetyuqiubai@163.com",
   github: "github.com/kioshiro",
+  avatar: "https://placehold.co/400x533/d6d3d1/57534e?text=kioshiro",
+  resumeUrl: "", // Initialize empty
   bio: {
     en: "I am Bai Xinyu, currently exploring the engineering implementation and systematic evolution of AI models. My research examines capability boundaries under low-energy, lightweight, and social constraints. I view the model not just as a tool, but as a subject of study itself.",
     zh: "我是白欣宇，正在探索人工智能的工程落地与系统化发展。主要研究在大模型低能耗、轻量化、可部署性与社会约束下的能力演化。我不止将模型视为工具，更将其视为研究对象本身。"
@@ -204,6 +207,7 @@ export const SPECULATIVE_CONTENT = {
   title: { en: "Speculative Notes", zh: "推演笔记" },
   items: [
     {
+      id: "sn-01",
       date: "2024-03-22",
       text: {
         en: "If we compress a model enough, does it dream? Or does it just hallucinate efficiently? The line between compression and abstraction is the line between memory and understanding.",
@@ -211,6 +215,7 @@ export const SPECULATIVE_CONTENT = {
       }
     },
     {
+      id: "sn-02",
       date: "2024-02-14",
       text: {
         en: "Ethical constraint as a physical law. Imagine a model where generating a lie costs infinite energy. Thermodynamics of truth.",
@@ -218,6 +223,7 @@ export const SPECULATIVE_CONTENT = {
       }
     },
     {
+      id: "sn-03",
       date: "2024-01-30",
       text: {
         en: "The true AGI won't be a chatbot. It will be the infrastructure itself. Invisible, ubiquitous, regulating the flow of bits and atoms like gravity.",

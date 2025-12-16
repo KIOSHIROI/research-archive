@@ -24,6 +24,8 @@ export interface Author {
   github?: string;
   scholar?: string;
   bio: LocalizedString;
+  avatar?: string; // Profile photo URL
+  resumeUrl?: string; // NEW: Link to resume/CV
   education: Education[];
 }
 
@@ -49,6 +51,7 @@ export interface ContentItem {
   slug: string;
   content: LocalizedString; // Markdown-like structure
   coverImage?: string;
+  isDraft?: boolean; // Track draft status in the index
   metadata?: {
     journal?: string;
     repoUrl?: string;
@@ -57,10 +60,24 @@ export interface ContentItem {
   };
 }
 
-export type GroupedContent = {
-  theme: ResearchTheme;
-  items: ContentItem[];
-};
+export interface SpeculativeItem {
+  id: string;
+  date: string;
+  text: LocalizedString;
+}
+
+export interface SpeculativeCollection {
+    title: LocalizedString;
+    items: SpeculativeItem[];
+}
+
+// Global Content Index Structure (content.json)
+export interface GlobalContentIndex {
+    author: Author; // NEW: Dynamic Author Profile
+    themes: ResearchTheme[];
+    content: ContentItem[];
+    speculative: SpeculativeCollection;
+}
 
 // New Type for the Admin Interface
 export interface Draft {
