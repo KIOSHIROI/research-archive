@@ -1,6 +1,5 @@
 
 // Vercel Serverless Function (Node.js)
-// This file runs on the server, keeping your GITHUB_TOKEN secure.
 import { Octokit } from "@octokit/rest";
 
 export default async function handler(req, res) {
@@ -25,16 +24,13 @@ export default async function handler(req, res) {
 
   const owner = process.env.GITHUB_OWNER;
   const repo = process.env.GITHUB_REPO;
-  const branch = 'main'; // Target branch
+  const branch = 'main'; 
 
   try {
-    // 2. Commit Logic
-    // We iterate through the files (e.g., zh.md and en.md) and commit them.
-    
     for (const file of files) {
-      const { path, content } = file;
+      const { path, content, isBinary } = file;
 
-      // Check if file exists to get its SHA (required for updates)
+      // Check if file exists to get SHA
       let sha;
       try {
         const { data } = await octokit.repos.getContent({
@@ -45,17 +41,23 @@ export default async function handler(req, res) {
         });
         sha = data.sha;
       } catch (e) {
-        // File doesn't exist, which is fine for new posts
+        // File doesn't exist
       }
 
-      // Create or Update File
+      // Prepare content: strictly Base64
+      // If isBinary is true, we assume 'content' is ALREADY a base64 string (without data:image/... prefix)
+      // If isBinary is false, we convert the UTF-8 string to Base64
+      const contentBase64 = isBinary 
+        ? content 
+        : Buffer.from(content).toString('base64');
+
       await octokit.repos.createOrUpdateFileContents({
         owner,
         repo,
         path,
         message: message || `research(log): update ${path}`,
-        content: Buffer.from(content).toString('base64'),
-        sha, // If omitted, GitHub creates a new file. If provided, GitHub updates it.
+        content: contentBase64,
+        sha,
         branch,
       });
     }
