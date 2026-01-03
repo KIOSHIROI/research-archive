@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -81,11 +80,11 @@ const Layout: React.FC = () => {
       : 'text-stone-500 dark:text-stone-500 hover:text-stone-800 dark:hover:text-stone-400 transition-colors';
   };
 
-  // Hide header/footer on Admin route for immersion
+  // Check if we are in Admin mode
   const isAdmin = location.pathname === '/admin';
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden transition-colors duration-1000">
+    <div className={`flex flex-col relative transition-colors duration-1000 ${isAdmin ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
        
        <CommandPalette />
 
@@ -99,7 +98,7 @@ const Layout: React.FC = () => {
           <Starfield />
        </div>
 
-      <div className={`relative z-10 mx-auto w-full px-6 py-8 md:py-16 selection:bg-stone-200 selection:text-stone-900 dark:selection:bg-ink-800 dark:selection:text-stone-100 ${isAdmin ? 'max-w-[1400px]' : 'max-w-5xl'}`}>
+      <div className={`relative z-10 mx-auto w-full transition-all duration-300 ${isAdmin ? 'h-full p-0 max-w-none' : 'px-6 py-8 md:py-16 max-w-5xl selection:bg-stone-200 selection:text-stone-900 dark:selection:bg-ink-800 dark:selection:text-stone-100'}`}>
         
         {/* Header (Hidden in Admin) */}
         {!isAdmin && (
@@ -162,11 +161,15 @@ const Layout: React.FC = () => {
         )}
 
         {/* Main Content with Fade Transition */}
-        <main className="flex-grow w-full min-h-[50vh]">
-            <div key={location.pathname} className="animate-fade-in-up">
-               <Outlet />
-            </div>
-        </main>
+        {isAdmin ? (
+             <Outlet />
+        ) : (
+            <main className="flex-grow w-full min-h-[50vh]">
+                <div key={location.pathname} className="animate-fade-in-up">
+                <Outlet />
+                </div>
+            </main>
+        )}
 
         {/* Footer (Hidden in Admin) */}
         {!isAdmin && (

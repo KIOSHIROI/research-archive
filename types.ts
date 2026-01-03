@@ -57,6 +57,7 @@ export interface ContentItem {
     repoUrl?: string;
     techStack?: string[];
     coAuthors?: string[];
+    notionUrl?: string; // NEW: Direct Notion integration
   };
 }
 
@@ -91,4 +92,9 @@ export interface Draft {
   contentZh: string;
   contentEn: string;
   isDraft: boolean;
+  // Metadata fields
+  journal: string;
+  repoUrl: string;
+  techStack: string; // Comma separated string for editing
+  notionUrl: string; // NEW: Field for Notion links
 }

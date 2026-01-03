@@ -84,6 +84,29 @@ export const THEMES: ResearchTheme[] = [
 
 export const CONTENT: ContentItem[] = [
   {
+    id: "notion-mxfp",
+    type: ContentType.ARTICLE,
+    themeId: "structural-understanding",
+    title: { 
+      en: "MXFP: Multi-dimensional Exploration of Focal Points", 
+      zh: "MXFP：多维焦点探索研究日志" 
+    },
+    slug: "mxfp-research-log",
+    date: "2024-05-20",
+    abstract: {
+      en: "A comprehensive documentation and research log for the MXFP framework, exploring complex interaction patterns and structural nodes.",
+      zh: "关于 MXFP 框架的完整研究日志，深入探讨了复杂的交互模式与结构化节点。"
+    },
+    metadata: {
+      journal: "Internal Research Log",
+      notionUrl: "https://www.notion.so/MXFP-2d51de4f6c5a8030929afda9c37ec73d?source=copy_link"
+    },
+    content: {
+      en: "This article is hosted on Notion. Please refer to the embedded view.",
+      zh: "本文托管于 Notion。请参考嵌入视图。"
+    }
+  },
+  {
     id: "art-01",
     type: ContentType.ARTICLE,
     themeId: "green-architecture",

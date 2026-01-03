@@ -1,7 +1,8 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ContentItem, ContentType } from '../types';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Share2 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
 interface ContentCardProps {
@@ -11,6 +12,7 @@ interface ContentCardProps {
 
 export const ContentCard: React.FC<ContentCardProps> = ({ item }) => {
   const isProject = item.type === ContentType.PROJECT;
+  const notionUrl = item.metadata?.notionUrl;
   const linkPath = isProject ? `/projects/${item.slug}` : `/articles/${item.slug}`;
   const { lang, t } = useLanguage();
 
@@ -25,6 +27,11 @@ export const ContentCard: React.FC<ContentCardProps> = ({ item }) => {
                 <ArrowUpRight size={14} />
               </span>
             )}
+            {notionUrl && (
+              <span className="text-blue-500/50 group-hover:text-blue-500 transition-colors" title="External Notion Document">
+                <Share2 size={14} />
+              </span>
+            )}
           </h3>
         </Link>
         <span className="text-xs text-stone-400 dark:text-stone-500 font-mono shrink-0 md:ml-4 mt-1 md:mt-0 group-hover:text-stone-500 dark:group-hover:text-stone-400 transition-colors">
@@ -37,7 +44,9 @@ export const ContentCard: React.FC<ContentCardProps> = ({ item }) => {
       </p>
 
       <div className="mt-4 flex flex-wrap gap-4 text-xs font-mono text-stone-400 dark:text-stone-600 uppercase tracking-wider opacity-70 group-hover:opacity-100 transition-opacity">
-         <span className="text-stone-500 dark:text-stone-500">{isProject ? t('label.artifact') : t('label.article')}</span>
+         <span className={`${notionUrl ? 'text-blue-500' : 'text-stone-500 dark:text-stone-500'}`}>
+            {notionUrl ? 'Notion Lab' : (isProject ? t('label.artifact') : t('label.article'))}
+         </span>
          {item.metadata?.journal && (
            <>
              <span className="select-none text-stone-300 dark:text-stone-700">•</span>

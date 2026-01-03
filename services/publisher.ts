@@ -19,8 +19,13 @@ const generateMarkdown = (draft: Draft, lang: 'zh' | 'en'): string => {
   const title = isZh ? draft.titleZh : draft.titleEn;
   const abstract = isZh ? draft.abstractZh : draft.abstractEn;
   
+  // Convert comma-separated tech stack back to array format for YAML
+  const techStackArray = draft.techStack
+    ? draft.techStack.split(',').map(s => `"${s.trim()}"`).join(', ')
+    : '';
+  
   // We use a unified Front Matter structure.
-  return `---
+  let yaml = `---
 slug: "${escapeYaml(draft.slug)}"
 title: "${escapeYaml(title)}"
 title_en: "${escapeYaml(draft.titleEn)}"
@@ -30,10 +35,20 @@ theme: ${draft.themeId}
 draft: ${draft.isDraft}
 lang: ${lang}
 abstract: "${escapeYaml(abstract)}"
----
-
-${content}
 `;
+
+  // Append Metadata Block if exists
+  if (draft.journal || draft.repoUrl || draft.techStack || draft.notionUrl) {
+      yaml += `metadata:\n`;
+      if (draft.journal) yaml += `  journal: "${escapeYaml(draft.journal)}"\n`;
+      if (draft.repoUrl) yaml += `  repoUrl: "${escapeYaml(draft.repoUrl)}"\n`;
+      if (draft.notionUrl) yaml += `  notionUrl: "${escapeYaml(draft.notionUrl)}"\n`;
+      if (techStackArray) yaml += `  techStack: [${techStackArray}]\n`;
+  }
+
+  yaml += `---\n\n${content}`;
+
+  return yaml;
 };
 
 // New parameter: indexContent (optional JSON string of all content)

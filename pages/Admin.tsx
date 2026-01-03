@@ -48,11 +48,13 @@ const Admin: React.FC = () => {
   const [draft, setDraft] = useState<Draft>({
     slug: '', titleZh: '', titleEn: '', type: ContentType.ARTICLE, themeId: '', 
     abstractZh: '', abstractEn: '', contentZh: '', contentEn: '', isDraft: true,
+    journal: '', repoUrl: '', techStack: '', notionUrl: ''
   });
 
   // --- State: Theme Manager ---
   const [localThemes, setLocalThemes] = useState<ResearchTheme[]>([]);
-  const [uploadingThemeId, setUploadingThemeId] = useState<string | null>(null); // Track which theme is getting an image
+  // Use Ref to avoid closure staleness in async/event handlers
+  const uploadingThemeIdRef = useRef<string | null>(null); 
 
   // --- State: Speculative Manager ---
   const [localSpeculative, setLocalSpeculative] = useState<SpeculativeItem[]>([]);
@@ -126,7 +128,11 @@ const Admin: React.FC = () => {
           abstractEn: item.abstract.en, abstractZh: item.abstract.zh,
           contentEn: typeof item.content.en === 'string' ? item.content.en : '',
           contentZh: typeof item.content.zh === 'string' ? item.content.zh : '',
-          isDraft: item.isDraft !== false 
+          isDraft: item.isDraft !== false,
+          journal: item.metadata?.journal || '',
+          repoUrl: item.metadata?.repoUrl || '',
+          techStack: item.metadata?.techStack?.join(', ') || '',
+          notionUrl: item.metadata?.notionUrl || ''
       });
       setActiveTab('editor');
   };
@@ -139,6 +145,7 @@ const Admin: React.FC = () => {
         type: ContentType.ARTICLE, themeId: localThemes[0]?.id || '',
         abstractZh: '', abstractEn: '', contentZh: '', contentEn: '',
         isDraft: true,
+        journal: '', repoUrl: '', techStack: '', notionUrl: ''
       });
       setActiveTab('editor');
   }
@@ -160,7 +167,13 @@ const Admin: React.FC = () => {
             themeId: draft.themeId,
             slug: draft.slug,
             content: { en: draft.contentEn, zh: draft.contentZh },
-            isDraft: draft.isDraft
+            isDraft: draft.isDraft,
+            metadata: {
+                journal: draft.journal,
+                repoUrl: draft.repoUrl,
+                techStack: draft.techStack ? draft.techStack.split(',').map(s => s.trim()) : undefined,
+                notionUrl: draft.notionUrl || undefined
+            }
         };
         updatedContentList = updatedContentList.filter(c => c.slug !== draft.slug);
         updatedContentList.push(newItem);
@@ -220,6 +233,7 @@ const Admin: React.FC = () => {
           } catch (err) { setStatusLog(prev => [`Upload Error: ${err}`, ...prev]); }
       };
       reader.readAsDataURL(file);
+      if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   // Profile Image Upload Logic
@@ -252,6 +266,7 @@ const Admin: React.FC = () => {
           } catch (err) { setStatusLog(prev => [`Upload Error: ${err}`, ...prev]); }
       };
       reader.readAsDataURL(file);
+      if (profileInputRef.current) profileInputRef.current.value = '';
   }
 
   // Resume Upload Logic
@@ -296,25 +311,32 @@ const Admin: React.FC = () => {
           } catch (err) { setStatusLog(prev => [`Upload Error: ${err}`, ...prev]); }
       };
       reader.readAsDataURL(file);
+      if (resumeInputRef.current) resumeInputRef.current.value = '';
   }
 
   // Theme Cover Image Upload Logic
   const themeInputRef = useRef<HTMLInputElement>(null);
   const triggerThemeUpload = (id: string) => {
-      setUploadingThemeId(id);
+      uploadingThemeIdRef.current = id;
       themeInputRef.current?.click();
   }
 
   const handleThemeCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file || !uploadingThemeId) return;
+      const targetId = uploadingThemeIdRef.current;
+
+      if (!file) return;
+      if (!targetId) {
+          setStatusLog(prev => [`Error: No target theme ID found.`, ...prev]);
+          return;
+      }
       
-      setStatusLog(prev => [`Uploading theme cover for ${uploadingThemeId}...`, ...prev]);
+      setStatusLog(prev => [`Uploading theme cover for ${targetId}...`, ...prev]);
       const reader = new FileReader();
       reader.onloadend = async () => {
           const base64Content = (reader.result as string).split(',')[1];
           const ext = file.name.split('.').pop() || 'jpg';
-          const filename = `${uploadingThemeId}.${ext}`;
+          const filename = `${targetId}.${ext}`;
           
           try {
              const path = `public/images/themes/${filename}`;
@@ -324,7 +346,7 @@ const Admin: React.FC = () => {
                 body: JSON.stringify({
                     accessKey,
                     files: [{ path, content: base64Content, isBinary: true }],
-                    message: `theme: update cover for ${uploadingThemeId}`
+                    message: `theme: update cover for ${targetId}`
                 })
              });
              
@@ -332,20 +354,21 @@ const Admin: React.FC = () => {
                  const imageUrl = `/images/themes/${filename}?t=${Date.now()}`;
                  setStatusLog(prev => [`Theme cover updated: ${imageUrl}`, ...prev]);
                  
-                 // Update local state
-                 const updatedThemes = localThemes.map(t => {
-                     if (t.id === uploadingThemeId) {
+                 // Update local state - use functional update for safety
+                 setLocalThemes(prevThemes => prevThemes.map(t => {
+                     if (t.id === targetId) {
                          return { ...t, coverImage: imageUrl };
                      }
                      return t;
-                 });
-                 setLocalThemes(updatedThemes);
+                 }));
              } else throw new Error('Upload failed');
           } catch (err) { setStatusLog(prev => [`Upload Error: ${err}`, ...prev]); }
           
-          setUploadingThemeId(null);
+          uploadingThemeIdRef.current = null;
       };
       reader.readAsDataURL(file);
+      // Reset input so same file can be selected again
+      if (themeInputRef.current) themeInputRef.current.value = '';
   }
 
 
@@ -398,23 +421,26 @@ const Admin: React.FC = () => {
   );
 
   return (
-    <div className="h-screen w-full flex bg-stone-50 dark:bg-ink-950 text-stone-800 dark:text-stone-200 overflow-hidden font-mono text-xs">
+    <div className="h-full w-full flex bg-stone-50 dark:bg-ink-950 text-stone-800 dark:text-stone-200 overflow-hidden font-mono text-xs">
       
       {/* 1. Main Navigation Sidebar */}
       <aside className="w-16 border-r border-stone-200 dark:border-ink-800 flex flex-col items-center py-4 bg-white dark:bg-ink-950 shrink-0 z-20">
           <div className="mb-8 text-stone-900 dark:text-white"><Terminal size={20} /></div>
-          <nav className="flex flex-col gap-6 w-full">
-              <button onClick={() => setActiveTab('dashboard')} className={`p-3 mx-auto rounded-md transition-colors ${activeTab === 'dashboard' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Dashboard"><LayoutDashboard size={18} /></button>
-              <button onClick={() => setActiveTab('editor')} className={`p-3 mx-auto rounded-md transition-colors ${activeTab === 'editor' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Editor"><FileText size={18} /></button>
-              <button onClick={() => setActiveTab('themes')} className={`p-3 mx-auto rounded-md transition-colors ${activeTab === 'themes' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Themes"><Network size={18} /></button>
-              <button onClick={() => setActiveTab('profile')} className={`p-3 mx-auto rounded-md transition-colors ${activeTab === 'profile' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Profile"><User size={18} /></button>
-              <button onClick={() => setActiveTab('speculative')} className={`p-3 mx-auto rounded-md transition-colors ${activeTab === 'speculative' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Speculative Notes"><Sparkles size={18} /></button>
-          </nav>
-          <div className="mt-auto flex flex-col gap-4">
-              <button onClick={() => navigate('/')} className="p-3 mx-auto text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors" title="Exit to Home">
+          
+          {/* Scrollable Nav Area */}
+          <div className="flex-1 w-full overflow-y-auto no-scrollbar flex flex-col items-center gap-6 pb-4">
+              <button onClick={() => setActiveTab('dashboard')} className={`p-3 rounded-md transition-colors ${activeTab === 'dashboard' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Dashboard"><LayoutDashboard size={18} /></button>
+              <button onClick={() => setActiveTab('editor')} className={`p-3 rounded-md transition-colors ${activeTab === 'editor' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Editor"><FileText size={18} /></button>
+              <button onClick={() => setActiveTab('themes')} className={`p-3 rounded-md transition-colors ${activeTab === 'themes' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Themes"><Network size={18} /></button>
+              <button onClick={() => setActiveTab('profile')} className={`p-3 rounded-md transition-colors ${activeTab === 'profile' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Profile"><User size={18} /></button>
+              <button onClick={() => setActiveTab('speculative')} className={`p-3 rounded-md transition-colors ${activeTab === 'speculative' ? 'bg-stone-100 dark:bg-ink-800 text-stone-900 dark:text-white' : 'text-stone-400 hover:text-stone-600'}`} title="Speculative Notes"><Sparkles size={18} /></button>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-4 border-t border-stone-100 dark:border-ink-800 pt-4 w-full items-center">
+              <button onClick={() => navigate('/')} className="p-3 text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 transition-colors" title="Exit to Home">
                   <LogOut size={18} />
               </button>
-              <button onClick={handleGlobalCommit} disabled={isSubmitting} className={`p-3 mx-auto rounded-md transition-colors ${isSubmitting ? 'animate-pulse text-stone-400' : 'bg-stone-900 text-white hover:bg-stone-700'}`} title="Commit All Changes">
+              <button onClick={handleGlobalCommit} disabled={isSubmitting} className={`p-3 rounded-md transition-colors ${isSubmitting ? 'animate-pulse text-stone-400' : 'bg-stone-900 text-white hover:bg-stone-700'}`} title="Commit All Changes">
                   {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
               </button>
           </div>
@@ -472,6 +498,13 @@ const Admin: React.FC = () => {
                 <div className="p-4 space-y-6 flex-1 overflow-y-auto min-w-[18rem]">
                     <div className="space-y-1"><label className="text-[10px] text-stone-400 uppercase">Slug</label><input className="w-full bg-stone-50 dark:bg-ink-900 p-2 border border-stone-200 dark:border-ink-800 outline-none" value={draft.slug} onChange={e => setDraft(d => ({...d, slug: e.target.value}))} /></div>
                     <div className="space-y-1"><label className="text-[10px] text-stone-400 uppercase">Theme</label><select className="w-full bg-stone-50 dark:bg-ink-900 p-2 border border-stone-200 dark:border-ink-800 outline-none" value={draft.themeId} onChange={e => setDraft(d => ({...d, themeId: e.target.value}))}>{localThemes.map(t => <option key={t.id} value={t.id}>{t.title.en}</option>)}</select></div>
+                    
+                    {/* Extended Metadata Fields */}
+                    <div className="space-y-1"><label className="text-[10px] text-stone-400 uppercase">Journal / Publication</label><input className="w-full bg-stone-50 dark:bg-ink-900 p-2 border border-stone-200 dark:border-ink-800 outline-none" value={draft.journal} onChange={e => setDraft(d => ({...d, journal: e.target.value}))} placeholder="e.g. CVPR 2024" /></div>
+                    <div className="space-y-1"><label className="text-[10px] text-stone-400 uppercase">Repo URL</label><input className="w-full bg-stone-50 dark:bg-ink-900 p-2 border border-stone-200 dark:border-ink-800 outline-none" value={draft.repoUrl} onChange={e => setDraft(d => ({...d, repoUrl: e.target.value}))} placeholder="github.com/..." /></div>
+                    <div className="space-y-1"><label className="text-[10px] text-stone-400 uppercase">Tech Stack (Comma sep)</label><input className="w-full bg-stone-50 dark:bg-ink-900 p-2 border border-stone-200 dark:border-ink-800 outline-none" value={draft.techStack} onChange={e => setDraft(d => ({...d, techStack: e.target.value}))} placeholder="React, Python, ..." /></div>
+                    <div className="space-y-1"><label className="text-[10px] text-stone-400 uppercase">Notion URL</label><input className="w-full bg-stone-50 dark:bg-ink-900 p-2 border border-stone-200 dark:border-ink-800 outline-none" value={draft.notionUrl} onChange={e => setDraft(d => ({...d, notionUrl: e.target.value}))} placeholder="https://www.notion.so/..." /></div>
+
                     <div className="border-t border-stone-200 dark:border-ink-800 pt-6">
                         <label className="flex items-center justify-between cursor-pointer group"><span className="text-[10px] text-stone-400 uppercase">Draft Status</span><div className={`w-8 h-4 rounded-full relative transition-colors ${draft.isDraft ? 'bg-stone-800 dark:bg-stone-200' : 'bg-stone-200 dark:bg-ink-800'}`}><div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white dark:bg-ink-950 transition-transform ${draft.isDraft ? 'left-4.5' : 'left-0.5'}`}></div></div><input type="checkbox" className="hidden" checked={draft.isDraft} onChange={e => setDraft(d => ({...d, isDraft: e.target.checked}))} /></label>
                     </div>
